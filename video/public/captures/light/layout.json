@@ -1,0 +1,131 @@
+{
+  "width": 1920,
+  "height": 4829,
+  "header": {
+    "x": 0,
+    "y": 0,
+    "w": 1920,
+    "h": 52
+  },
+  "boxes": [
+    {
+      "text": "KANBANAlle Projekteauror",
+      "x": 34,
+      "y": 86,
+      "w": 1852,
+      "h": 640
+    },
+    {
+      "text": "GIT STATUS6 repos·just n",
+      "x": 34,
+      "y": 736,
+      "w": 921,
+      "h": 770
+    },
+    {
+      "text": "DOCKERTOTAL6RUNNING5STOP",
+      "x": 965,
+      "y": 736,
+      "w": 921,
+      "h": 770
+    },
+    {
+      "text": "BACKUPSOKÄltestes Backup",
+      "x": 34,
+      "y": 3336,
+      "w": 1852,
+      "h": 770
+    },
+    {
+      "text": "CPULIVE42.6%16 Kerne, Sp",
+      "x": 34,
+      "y": 1516,
+      "w": 456,
+      "h": 250
+    },
+    {
+      "text": "CORESLIVE011.2%121.8%237",
+      "x": 965,
+      "y": 1776,
+      "w": 456,
+      "h": 510
+    },
+    {
+      "text": "MEMORYLIVE39.1%25.00 GB ",
+      "x": 500,
+      "y": 1516,
+      "w": 455,
+      "h": 250
+    },
+    {
+      "text": "VRAMLIVE38.0%Radeon RX 7",
+      "x": 965,
+      "y": 1516,
+      "w": 456,
+      "h": 250
+    },
+    {
+      "text": "TEMPERATURELIVE47.0°CMax",
+      "x": 1431,
+      "y": 1516,
+      "w": 455,
+      "h": 250
+    },
+    {
+      "text": "PERFORMANCELIVE17:39:041",
+      "x": 34,
+      "y": 1776,
+      "w": 921,
+      "h": 510
+    },
+    {
+      "text": "STORAGELIVE/41.2%383.70 ",
+      "x": 1431,
+      "y": 1776,
+      "w": 455,
+      "h": 510
+    },
+    {
+      "text": "SERVICE STATUSClaudeOPER",
+      "x": 34,
+      "y": 2296,
+      "w": 611,
+      "h": 510
+    },
+    {
+      "text": "GITHUB STATSDemo Dev@dem",
+      "x": 655,
+      "y": 2296,
+      "w": 610,
+      "h": 510
+    },
+    {
+      "text": "WEATHERBerlin, Germany14",
+      "x": 1275,
+      "y": 2296,
+      "w": 611,
+      "h": 510
+    },
+    {
+      "text": "NETWORK OUTAGESAll targe",
+      "x": 34,
+      "y": 2816,
+      "w": 921,
+      "h": 510
+    },
+    {
+      "text": "WEB SCRAPERPlaywright + ",
+      "x": 965,
+      "y": 2816,
+      "w": 921,
+      "h": 510
+    },
+    {
+      "text": "MARKDOWN EDITORMDTEXT# W",
+      "x": 34,
+      "y": 4116,
+      "w": 1852,
+      "h": 510
+    }
+  ]
+}

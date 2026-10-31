@@ -7,7 +7,7 @@ import eslintConfigPrettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist', 'node_modules']),
+  globalIgnores(['dist', 'node_modules', 'video']),
   // Frontend: browser environment + React rules
   {
     files: ['src/**/*.{ts,tsx}', 'shared/**/*.ts'],
