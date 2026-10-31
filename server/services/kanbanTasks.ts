@@ -86,8 +86,9 @@ export async function listTasks(): Promise<{ tasks: KanbanTask[]; etag: string }
   const stamps = await Promise.all(
     names.map(async n => `${n}:${(await stat(join(TASK_DIR, n))).mtimeMs}`)
   );
+  // newest first: created desc, then task number desc
   const tasks = (await Promise.all(names.map(parseTask))).sort(
-    (a, b) => a.created.localeCompare(b.created) || a.file.localeCompare(b.file)
+    (a, b) => b.created.localeCompare(a.created) || b.file.localeCompare(a.file)
   );
   const etag = `"${createHash('sha1').update(stamps.join('|')).digest('hex')}"`;
   cache = { tasks, etag };
