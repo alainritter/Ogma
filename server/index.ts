@@ -490,42 +490,45 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
-// Fetches real service status from Statuspage.io APIs
+// Fetches real service status from Statuspage.io APIs.
+// Status follows open incidents, not the page indicator: outages of single
+// components (e.g. one Cloudflare data center in maintenance) color the
+// indicator although the provider reports no incident.
 app.get('/api/service-status', generalLimiter, async (_req, res) => {
   const services = [
     {
       name: 'Claude',
-      apiUrl: 'https://status.claude.com/api/v2/status.json',
+      apiUrl: 'https://status.claude.com/api/v2/summary.json',
       statusUrl: 'https://status.claude.com/',
     },
     {
       name: 'Cloudflare',
-      apiUrl: 'https://www.cloudflarestatus.com/api/v2/status.json',
+      apiUrl: 'https://www.cloudflarestatus.com/api/v2/summary.json',
       statusUrl: 'https://www.cloudflarestatus.com/',
     },
     {
       name: 'GitHub',
-      apiUrl: 'https://www.githubstatus.com/api/v2/status.json',
+      apiUrl: 'https://www.githubstatus.com/api/v2/summary.json',
       statusUrl: 'https://www.githubstatus.com/',
     },
     {
       name: 'OpenAI',
-      apiUrl: 'https://status.openai.com/api/v2/status.json',
+      apiUrl: 'https://status.openai.com/api/v2/summary.json',
       statusUrl: 'https://status.openai.com/',
     },
     {
       name: 'Vercel',
-      apiUrl: 'https://www.vercel-status.com/api/v2/status.json',
+      apiUrl: 'https://www.vercel-status.com/api/v2/summary.json',
       statusUrl: 'https://www.vercel-status.com/',
     },
     {
       name: 'Tailscale',
-      apiUrl: 'https://status.tailscale.com/api/v2/status.json',
+      apiUrl: 'https://status.tailscale.com/api/v2/summary.json',
       statusUrl: 'https://status.tailscale.com/',
     },
     {
       name: 'npm',
-      apiUrl: 'https://status.npmjs.org/api/v2/status.json',
+      apiUrl: 'https://status.npmjs.org/api/v2/summary.json',
       statusUrl: 'https://status.npmjs.org/',
     },
   ];
@@ -535,20 +538,25 @@ app.get('/api/service-status', generalLimiter, async (_req, res) => {
       const response = await fetch(service.apiUrl, { signal: AbortSignal.timeout(5000) });
       const data = (await response.json()) as {
         status?: { indicator?: string; description?: string };
+        incidents?: { name?: string }[];
       };
+      // Without a status block the response is no summary (error page) -> 'unknown' below
+      if (!data?.status) throw new Error('Invalid summary');
+      const incidents = data.incidents ?? [];
+      if (incidents.length === 0) {
+        return {
+          name: service.name,
+          status: 'operational',
+          description: '',
+          statusUrl: service.statusUrl,
+        };
+      }
       const indicator: string = data?.status?.indicator ?? 'unknown';
-      const status =
-        indicator === 'none'
-          ? 'operational'
-          : indicator === 'minor'
-            ? 'degraded'
-            : indicator === 'major' || indicator === 'critical'
-              ? 'outage'
-              : 'unknown';
+      const status = indicator === 'major' || indicator === 'critical' ? 'outage' : 'degraded';
       return {
         name: service.name,
         status,
-        description: data?.status?.description ?? '',
+        description: incidents[0].name ?? data.status.description ?? '',
         statusUrl: service.statusUrl,
       };
     })
