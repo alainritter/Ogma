@@ -13,32 +13,38 @@ export const WIDTH = 1920;
 export const HEIGHT = 1200;
 
 const PAGE = { w: 1920, h: 4829 }; // CSS px of the captured page
-const APP_IN = 60;
-const APP_OUT = 520;
-const OUTRO = 540;
+// Window the page is shown in, in video px; the page is scaled so its full width fits.
+const WIN = { x: 80, y: 48, w: 1760, h: 1000, bar: 40, r: 18 };
+const FIT = WIN.w / PAGE.w;
+const APP_IN = 54;
+const APP_OUT = 548;
+const OUTRO = 556;
 
-const CAPTIONS: [from: number, to: number, text: string][] = [
-  [78, 156, "Alles auf einem Bildschirm"],
-  [174, 262, "Aufgaben mit Fortschritt im Blick"],
-  [286, 366, "Repos und Container im Griff"],
-  [390, 466, "Live-Metriken deines Systems"],
-  [476, 520, "Dienste und Netz geprüft"],
+type Box = { x: number; y: number; w: number; h: number };
+// Highlight boxes in page CSS px (unions of widget boxes from capture/layout.json).
+const KANBAN: Box = { x: 34, y: 86, w: 1852, h: 640 };
+const GIT_DOCKER: Box = { x: 34, y: 736, w: 1852, h: 770 };
+const METRICS: Box = { x: 34, y: 1516, w: 1852, h: 770 };
+const SERVICES: Box = { x: 34, y: 2296, w: 921, h: 1030 };
+
+// One entry per shot: frames, camera center on the page, caption and highlighted widgets.
+const SHOTS: { from: number; to: number; cy: number; text?: string; box?: Box }[] = [
+  { from: 60, to: 160, cy: 560 },
+  { from: 160, to: 262, cy: 540, text: "Kanban: Aufgaben mit Checklisten-Fortschritt", box: KANBAN },
+  { from: 262, to: 364, cy: 1121, text: "Git: Status, Pull, Push, Commit · Docker: Container", box: GIT_DOCKER },
+  { from: 364, to: 466, cy: 1901, text: "CPU, RAM, GPU und Temperatur live", box: METRICS },
+  { from: 466, to: APP_OUT, cy: 2811, text: "Statusseiten und Latenz externer Dienste", box: SERVICES },
 ];
 
-// Camera over the captured page (CSS px): point centered on screen and zoom.
+// Camera over the captured page (CSS px): point centered in the window and zoom (1 = page width fits).
+// Each shot holds a slow push; the travel to the next shot happens between its last and the next shot's first key.
 type Key = [frame: number, cx: number, cy: number, zoom: number];
 const CAM: Key[] = [
-  [APP_IN, 960, 500, 0.86],
-  [150, 960, 520, 0.98],
-  [170, 960, 520, 0.98],
-  [200, 960, 450, 1.0], // kanban
-  [262, 960, 450, 1.03],
-  [286, 960, 1060, 1.0], // git and docker
-  [366, 960, 1100, 1.02],
-  [390, 960, 1830, 1.0], // metrics and graph
-  [466, 960, 1860, 1.03],
-  [490, 960, 2640, 1.0], // services
-  [APP_OUT, 960, 2680, 1.02],
+  [APP_IN, 960, SHOTS[0].cy, 0.97],
+  ...SHOTS.flatMap(({ from, to, cy }): Key[] => [
+    [from + 10, 960, cy, 1.0],
+    [to - 8, 960, cy, 1.03],
+  ]),
 ];
 
 function track(keys: Key[], f: number, ease: (t: number) => number) {
@@ -95,7 +101,7 @@ function Title({ f }: { f: number }) {
         <Logo size={120} />
         <span style={{ fontFamily: sans, fontWeight: 700, fontSize: 112, letterSpacing: "-0.02em", color: C.foreground }}>Ogma</span>
       </div>
-      <BlurWords text="Das Dashboard für Entwickler" f={f} start={12} style={{ marginTop: 44, fontFamily: sans, fontWeight: 500, fontSize: 60, color: C.dim, justifyContent: "center" }} />
+      <BlurWords text="Dev-Dashboard für den Arbeitsrechner" f={f} start={12} style={{ marginTop: 44, fontFamily: sans, fontWeight: 500, fontSize: 52, color: C.dim, justifyContent: "center" }} />
     </AbsoluteFill>
   );
 }
@@ -103,7 +109,7 @@ function Title({ f }: { f: number }) {
 function Outro({ f }: { f: number }) {
   if (f < OUTRO) return null;
   const mark = ramp(f, OUTRO, 26, EASE.overshoot);
-  const out = ramp(f, 576, 20, EASE.exit);
+  const out = ramp(f, 580, 20, EASE.exit);
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: 1 - out, filter: out > 0 ? `blur(${(out * 8).toFixed(2)}px)` : undefined }}>
       <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
@@ -116,15 +122,19 @@ function Outro({ f }: { f: number }) {
   );
 }
 
+/** Lower third below the window: one factual label per shot. */
 function Caption({ f }: { f: number }) {
   return (
     <>
-      {CAPTIONS.map(([from, to, text]) => {
-        if (f < from || f >= to) return null;
+      {SHOTS.map(({ from, to, text }) => {
+        if (!text || f < from + 4 || f >= to) return null;
         const out = ramp(f, to - 12, 12, EASE.exit);
         return (
-          <div key={from} style={{ position: "absolute", left: 90, right: 90, bottom: 70, opacity: 1 - out, filter: out > 0 ? `blur(${(out * 6).toFixed(2)}px)` : undefined }}>
-            <BlurWords text={text} f={f} start={from} gap={3} dur={20} blur={10} style={{ fontFamily: sans, fontWeight: 700, fontSize: 78, lineHeight: 1.1, letterSpacing: "-0.01em", color: C.foreground }} />
+          <div key={from} style={{ position: "absolute", left: WIN.x, bottom: 40, opacity: 1 - out, filter: out > 0 ? `blur(${(out * 6).toFixed(2)}px)` : undefined }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 20, padding: "16px 30px 16px 22px", borderRadius: 14, background: `color-mix(in srgb, ${C.foreground} 5%, ${C.background})`, border: `1px solid color-mix(in srgb, ${C.foreground} 14%, transparent)` }}>
+              <div style={{ width: 6, height: 40, borderRadius: 3, background: C.accent }} />
+              <BlurWords text={text} f={f} start={from + 4} gap={2} dur={18} blur={8} style={{ fontFamily: sans, fontWeight: 600, fontSize: 40, lineHeight: 1.1, color: C.foreground }} />
+            </div>
           </div>
         );
       })}
@@ -132,18 +142,42 @@ function Caption({ f }: { f: number }) {
   );
 }
 
+/** Dims everything except the highlighted widgets of the current shot (cut-out via a huge box-shadow). */
+function Highlight({ f }: { f: number }) {
+  return (
+    <>
+      {SHOTS.map(({ from, to, box }) => {
+        if (!box) return null;
+        const w = ramp(f, from, 18) * (1 - ramp(f, to - 14, 14, EASE.exit));
+        if (w <= 0) return null;
+        return <div key={from} style={{ position: "absolute", left: box.x - 8, top: box.y - 8, width: box.w + 16, height: box.h + 16, borderRadius: 20, boxShadow: `0 0 0 5000px color-mix(in srgb, ${C.background} ${(w * 30).toFixed(1)}%, transparent)` }} />;
+      })}
+    </>
+  );
+}
+
 function App({ f, dark }: { f: number; dark: boolean }) {
   const [, cx, cy, zoom] = track(CAM, f, EASE.cam);
-  const inn = ramp(f, APP_IN, 16);
+  const inn = ramp(f, APP_IN, 18);
   const out = ramp(f, APP_OUT, 14, EASE.exit);
   if (inn <= 0 || out >= 1) return null;
+  const scale = zoom * FIT;
+  const viewH = WIN.h - WIN.bar;
   return (
-    <AbsoluteFill style={{ opacity: inn * (1 - out), filter: out > 0 ? `blur(${(out * 6).toFixed(2)}px)` : undefined }}>
-      <div style={{ position: "absolute", left: 0, top: 0, width: PAGE.w, height: PAGE.h, transformOrigin: "0 0", transform: `translate(${WIDTH / 2 - cx * zoom}px, ${HEIGHT / 2 - cy * zoom}px) scale(${zoom})` }}>
-        <Img src={staticFile(`captures/${dark ? "dark" : "light"}/page.png`)} style={{ width: PAGE.w, height: PAGE.h }} />
+    <AbsoluteFill style={{ opacity: inn * (1 - out), transform: `translateY(${((1 - inn) * 24).toFixed(2)}px)`, filter: out > 0 ? `blur(${(out * 6).toFixed(2)}px)` : undefined }}>
+      <div style={{ position: "absolute", left: WIN.x, top: WIN.y, width: WIN.w, height: WIN.h, borderRadius: WIN.r, overflow: "hidden", background: C.background, border: `1px solid color-mix(in srgb, ${C.foreground} 16%, transparent)`, boxShadow: `0 40px 90px color-mix(in srgb, ${C.foreground} 22%, transparent), 0 6px 20px color-mix(in srgb, ${C.foreground} 12%, transparent)` }}>
+        <div style={{ height: WIN.bar, display: "flex", alignItems: "center", gap: 10, padding: "0 18px", background: `color-mix(in srgb, ${C.foreground} 5%, ${C.background})`, borderBottom: `1px solid color-mix(in srgb, ${C.foreground} 12%, transparent)` }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{ width: 12, height: 12, borderRadius: 6, background: `color-mix(in srgb, ${C.foreground} 22%, transparent)` }} />
+          ))}
+        </div>
+        <div style={{ position: "relative", width: WIN.w, height: viewH, overflow: "hidden" }}>
+          <div style={{ position: "absolute", left: 0, top: 0, width: PAGE.w, height: PAGE.h, transformOrigin: "0 0", transform: `translate(${WIN.w / 2 - cx * scale}px, ${viewH / 2 - cy * scale}px) scale(${scale})` }}>
+            <Img src={staticFile(`captures/${dark ? "dark" : "light"}/page.png`)} style={{ width: PAGE.w, height: PAGE.h }} />
+            <Highlight f={f} />
+          </div>
+        </div>
       </div>
-      {/* caption band: the page fades into the background towards the bottom edge */}
-      <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 300, background: `linear-gradient(to bottom, color-mix(in srgb, ${C.background} 0%, transparent), color-mix(in srgb, ${C.background} 90%, transparent) 55%, ${C.background})` }} />
     </AbsoluteFill>
   );
 }
@@ -151,9 +185,9 @@ function App({ f, dark }: { f: number; dark: boolean }) {
 export function Showcase({ dark }: { dark: boolean }) {
   const f = useCurrentFrame();
   return (
-    <AbsoluteFill style={{ ...themeVars(dark), background: C.background, fontFamily: sans }}>
+    <AbsoluteFill style={{ ...themeVars(dark), background: `radial-gradient(ellipse at 50% 40%, ${C.background}, color-mix(in srgb, ${C.foreground} 9%, ${C.background}))`, fontFamily: sans }}>
       <App f={f} dark={dark} />
-      {f < APP_OUT + 14 && <Caption f={f} />}
+      {f < APP_OUT && <Caption f={f} />}
       <Title f={f} />
       <Outro f={f} />
     </AbsoluteFill>

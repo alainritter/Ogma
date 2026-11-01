@@ -5,7 +5,7 @@
   "scripts": {
     "studio": "remotion studio src/index.ts",
     "capture": "node capture/capture.mjs",
-    "render": "remotion render src/index.ts OgmaShowcase out/ogma.mp4 --codec h264 --crf 31 --muted && remotion render src/index.ts OgmaShowcaseDark out/ogma-dark.mp4 --codec h264 --crf 31 --muted",
+    "render": "remotion render src/index.ts OgmaShowcase out/ogma.mp4 --codec h264 --crf 20 --muted && remotion render src/index.ts OgmaShowcaseDark out/ogma-dark.mp4 --codec h264 --crf 20 --muted",
     "poster": "remotion still src/index.ts OgmaShowcase out/ogma.png --frame 150 && remotion still src/index.ts OgmaShowcaseDark out/ogma-dark.png --frame 150"
   },
   "dependencies": {
