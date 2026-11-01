@@ -8,7 +8,7 @@ import { C, sans, themeVars } from "./theme";
 // outro. Starts and ends on the empty background. Shot recipes from video-shotcraft: blur-slide (titles, captions),
 // overhead camera moves (the ride over the page).
 export const FPS = 30;
-export const DURATION = 600;
+export const DURATION = 652;
 export const WIDTH = 1920;
 export const HEIGHT = 1200;
 
@@ -17,23 +17,25 @@ const PAGE = { w: 1920, h: 4829 }; // CSS px of the captured page
 const WIN = { x: 80, y: 48, w: 1760, h: 1000, bar: 40, r: 18 };
 const FIT = WIN.w / PAGE.w;
 const APP_IN = 54;
-const APP_OUT = 548;
-const OUTRO = 556;
+const APP_OUT = 600;
+const OUTRO = 608;
 
 type Box = { x: number; y: number; w: number; h: number };
 // Highlight boxes in page CSS px (unions of widget boxes from capture/layout.json).
 const KANBAN: Box = { x: 34, y: 86, w: 1852, h: 640 };
-const GIT_DOCKER: Box = { x: 34, y: 736, w: 1852, h: 770 };
+const GIT: Box = { x: 34, y: 736, w: 921, h: 770 };
+const DOCKER: Box = { x: 965, y: 736, w: 921, h: 770 };
 const METRICS: Box = { x: 34, y: 1516, w: 1852, h: 770 };
 const SERVICES: Box = { x: 34, y: 2296, w: 921, h: 1030 };
 
-// One entry per shot: frames, camera center on the page, caption and highlighted widgets.
-const SHOTS: { from: number; to: number; cy: number; text?: string; box?: Box }[] = [
-  { from: 60, to: 160, cy: 560 },
-  { from: 160, to: 262, cy: 540, text: "Kanban: Aufgaben mit Checklisten-Fortschritt", box: KANBAN },
-  { from: 262, to: 364, cy: 1121, text: "Git: Status, Pull, Push, Commit · Docker: Container", box: GIT_DOCKER },
-  { from: 364, to: 466, cy: 1901, text: "CPU, RAM, GPU und Temperatur live", box: METRICS },
-  { from: 466, to: APP_OUT, cy: 2811, text: "Statusseiten und Latenz externer Dienste", box: SERVICES },
+// One entry per shot: frames, camera center on the page, zoom at start and end (1 = page width fits), caption and highlighted widgets.
+const SHOTS: { from: number; to: number; cy: number; z: [number, number]; text?: string; box?: Box }[] = [
+  { from: 60, to: 160, cy: 560, z: [1.0, 1.03] },
+  { from: 160, to: 250, cy: 540, z: [1.0, 1.03], text: "Kanban: Aufgaben mit Checklisten-Fortschritt", box: KANBAN },
+  { from: 250, to: 330, cy: 1121, z: [1.0, 1.015], text: "Git: Status, Pull, Push, Commit", box: GIT },
+  { from: 330, to: 410, cy: 1121, z: [1.015, 1.03], text: "Docker: Container und Ressourcen", box: DOCKER },
+  { from: 410, to: 510, cy: 1901, z: [1.0, 1.03], text: "CPU, RAM, GPU und Temperatur live", box: METRICS },
+  { from: 510, to: APP_OUT, cy: 2811, z: [0.93, 0.95], text: "Statusseiten und Latenz externer Dienste", box: SERVICES }, // 1046 px of page must fit the window height
 ];
 
 // Camera over the captured page (CSS px): point centered in the window and zoom (1 = page width fits).
@@ -41,9 +43,9 @@ const SHOTS: { from: number; to: number; cy: number; text?: string; box?: Box }[
 type Key = [frame: number, cx: number, cy: number, zoom: number];
 const CAM: Key[] = [
   [APP_IN, 960, SHOTS[0].cy, 0.97],
-  ...SHOTS.flatMap(({ from, to, cy }): Key[] => [
-    [from + 10, 960, cy, 1.0],
-    [to - 8, 960, cy, 1.03],
+  ...SHOTS.flatMap(({ from, to, cy, z }): Key[] => [
+    [from + 10, 960, cy, z[0]],
+    [to - 8, 960, cy, z[1]],
   ]),
 ];
 
@@ -109,7 +111,7 @@ function Title({ f }: { f: number }) {
 function Outro({ f }: { f: number }) {
   if (f < OUTRO) return null;
   const mark = ramp(f, OUTRO, 26, EASE.overshoot);
-  const out = ramp(f, 580, 20, EASE.exit);
+  const out = ramp(f, OUTRO + 24, 20, EASE.exit);
   return (
     <AbsoluteFill style={{ alignItems: "center", justifyContent: "center", opacity: 1 - out, filter: out > 0 ? `blur(${(out * 8).toFixed(2)}px)` : undefined }}>
       <div style={{ display: "flex", alignItems: "center", gap: 40 }}>
