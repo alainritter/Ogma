@@ -33,4 +33,4 @@ Requires Node.js 22+ and pnpm. Docker and Playwright are optional per widget.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE.md).

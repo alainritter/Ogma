@@ -1,10 +1,10 @@
 # Changes here will be overwritten by Copier; do not edit manually
-_commit: v1.0.1
+_commit: v1.1.0
 _src_path: /home/a/Dev/Kalliope
 has_architecture: true
-has_license: true
 has_screenshot: true
 lang: en
+license: mit
 project_name: Ogma
 screenshot_path: docs/screenshot.png
 status: active
