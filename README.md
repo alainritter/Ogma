@@ -84,7 +84,7 @@ Kanban Board: columns can be hidden, ideas are captured raw with several project
 ### Installation
 
 ```bash
-git clone https://github.com/darkjive/Ogma.git
+git clone https://github.com/alainritter/Ogma.git
 cd Ogma
 pnpm install
 
