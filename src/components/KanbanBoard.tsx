@@ -350,6 +350,69 @@ const ProjectChips = ({ project }: { project: string }) => (
   </>
 );
 
+function ProjectEditor({
+  project,
+  options,
+  disabled,
+  onChange,
+}: {
+  project: string;
+  options: string[];
+  disabled: boolean;
+  onChange: (next: string) => void;
+}) {
+  const [input, setInput] = useState('');
+  const list = splitProjects(project);
+  const add = (raw: string) => {
+    const name = raw.trim();
+    setInput('');
+    if (name && !list.includes(name)) onChange([...list, name].join(', '));
+  };
+  return (
+    <>
+      {list.map(name => (
+        <button
+          key={name}
+          type="button"
+          className="ds-chip"
+          style={{ '--c': projectColor(name) } as React.CSSProperties}
+          title="Entfernen"
+          disabled={disabled}
+          onClick={() => onChange(list.filter(x => x !== name).join(', '))}
+        >
+          {name}
+          <X size={12} />
+        </button>
+      ))}
+      <input
+        className="ds-input sm"
+        list="kanban-detail-projects"
+        value={input}
+        disabled={disabled}
+        placeholder="+ Projekt"
+        maxLength={100}
+        onChange={e => {
+          const v = e.target.value;
+          // Picking a datalist entry fires a replacement event, typing a character does not.
+          if (!(e.nativeEvent as InputEvent).inputType && v) add(v);
+          else setInput(v);
+        }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            add(input);
+          }
+        }}
+      />
+      <datalist id="kanban-detail-projects">
+        {options.map(p => (
+          <option key={p} value={p} />
+        ))}
+      </datalist>
+    </>
+  );
+}
+
 export function KanbanBoard() {
   const [tasks, setTasks] = useState<KanbanTask[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -495,7 +558,17 @@ export function KanbanBoard() {
                 {col.label}
               </span>
               {detail.idea && <span className="ds-badge warn">Idee</span>}
-              <ProjectChips project={detail.project} />
+              <ProjectEditor
+                project={detail.project}
+                options={projects}
+                disabled={busy}
+                onChange={async next => {
+                  if (await post(detail.file, 'project', { project: next })) {
+                    etag.current = '';
+                    await load();
+                  }
+                }}
+              />
               <span>
                 {detail.number} · {detail.created}
               </span>

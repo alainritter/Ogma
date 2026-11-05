@@ -127,6 +127,13 @@ export async function updateTask(
   cache = null;
 }
 
+export async function setProject(file: string, project: string): Promise<void> {
+  const task = await findTask(file);
+  task.project = project;
+  await saveTask(task);
+  cache = null;
+}
+
 const SLUG_MAP: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss' };
 
 function slugify(title: string): string {

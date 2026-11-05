@@ -44,6 +44,7 @@ import {
   listTasks,
   setStatus,
   updateTask,
+  setProject,
   archiveTask,
   createTask,
   addAttachment,
@@ -319,6 +320,18 @@ app.post('/api/kanban/tasks/:file/edit', generalLimiter, async (req, res) => {
   } catch (error) {
     console.error('Failed to edit Kanban task:', error);
     res.status(400).json({ error: 'Failed to edit task' });
+  }
+});
+
+app.post('/api/kanban/tasks/:file/project', generalLimiter, async (req, res) => {
+  const parsed = kanbanCreateSchema.pick({ project: true }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'Invalid project' });
+  try {
+    await setProject(String(req.params.file), parsed.data.project);
+    res.json({ ok: true });
+  } catch (error) {
+    console.error('Failed to set Kanban project:', error);
+    res.status(400).json({ error: 'Failed to set project' });
   }
 });
 
