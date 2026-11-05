@@ -29,6 +29,7 @@ import {
   bulkCommit,
   bulkFetch,
 } from './services/gitStatus.js';
+import { getCiStatus } from './services/githubCi.js';
 import { suggestCommitMessage, OllamaUnavailableError } from './services/commitMessage.js';
 import { getDockerInfo } from './services/docker.js';
 import { isPrivateHost } from './services/netGuard.js';
@@ -615,6 +616,10 @@ app.get('/api/connectivity', generalLimiter, async (_req, res) => {
   );
 
   res.json({ checks, timestamp: Date.now() });
+});
+
+app.get('/api/ci/status', generalLimiter, async (req, res) => {
+  res.json(await getCiStatus(req.query.refresh === '1'));
 });
 
 app.get('/api/git/status', generalLimiter, async (req, res) => {

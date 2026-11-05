@@ -26,7 +26,7 @@ const exists = (p: string) =>
   );
 
 /** Run `fn` over `items` with at most `limit` in flight (bulk ops must not fork 200 gits at once). */
-async function mapLimit<T, R>(
+export async function mapLimit<T, R>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<R>

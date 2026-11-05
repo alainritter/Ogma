@@ -11,6 +11,7 @@ import { TemperatureWidget } from './components/metrics/TemperatureWidget';
 import { WeatherWidget } from './components/WeatherWidget';
 import { GitHubStats } from './components/GitHubStats';
 import { ServiceStatus } from './components/ServiceStatus';
+import { CiStatus } from './components/CiStatus';
 import { NetworkOutageMap } from './components/NetworkOutageMap';
 import { WebScraper } from './components/WebScraper';
 import { MarkdownEditor } from './components/MarkdownEditor';
@@ -30,6 +31,7 @@ import {
   Save,
   Settings,
   Activity,
+  CircleCheck,
   ChartLine,
   CloudSun,
   Container,
@@ -93,11 +95,14 @@ const defaultLayout = [
   { i: 'network-outage', x: 0, y: 21, w: 6, h: 4, minW: 6, minH: 4 },
   { i: 'web-scraper', x: 6, y: 21, w: 6, h: 4, minW: 3, minH: 3 },
 
-  // Row 7: Backups
-  { i: 'backups', x: 0, y: 25, w: 12, h: 6, minW: 3, minH: 3 },
+  // Row 7: CI status
+  { i: 'ci-status', x: 0, y: 25, w: 12, h: 5, minW: 3, minH: 3 },
 
-  // Row 8: Markdown editor (full width for editing room)
-  { i: 'markdown-editor', x: 0, y: 31, w: 12, h: 4, minW: 6, minH: 3 },
+  // Row 8: Backups
+  { i: 'backups', x: 0, y: 30, w: 12, h: 6, minW: 3, minH: 3 },
+
+  // Row 9: Markdown editor (full width for editing room)
+  { i: 'markdown-editor', x: 0, y: 36, w: 12, h: 4, minW: 6, minH: 3 },
 ];
 
 // Below this width the grid collapses to one column (phones via the Pforte gateway).
@@ -149,8 +154,9 @@ const tabletDefaultLayout: LayoutItem[] = [
   { i: 'github', x: 6, y: 19, w: 3, h: 5, minW: 3, minH: 4 },
   { i: 'weather', x: 9, y: 19, w: 3, h: 5, minW: 3, minH: 4 },
   { i: 'web-scraper', x: 0, y: 24, w: 12, h: 4, minW: 3, minH: 3 },
-  { i: 'backups', x: 0, y: 28, w: 12, h: 6, minW: 3, minH: 3 },
-  { i: 'markdown-editor', x: 0, y: 34, w: 12, h: 4, minW: 6, minH: 3 },
+  { i: 'ci-status', x: 0, y: 28, w: 12, h: 5, minW: 3, minH: 3 },
+  { i: 'backups', x: 0, y: 33, w: 12, h: 6, minW: 3, minH: 3 },
+  { i: 'markdown-editor', x: 0, y: 39, w: 12, h: 4, minW: 6, minH: 3 },
 ];
 
 const defaultEnabledWidgets = {
@@ -158,6 +164,7 @@ const defaultEnabledWidgets = {
   'git-status': true,
   docker: true,
   backups: true,
+  'ci-status': true,
   'metrics-cpu': true,
   'metrics-cores': true,
   'metrics-memory': true,
@@ -184,6 +191,7 @@ const widgetConfig = {
   kanban: { name: 'KANBAN', icon: SquareKanban, component: KanbanBoard },
   'git-status': { name: 'GIT STATUS', icon: GitBranch, component: GitStatus },
   docker: { name: 'DOCKER', icon: Container, component: DockerWidget },
+  'ci-status': { name: 'CI STATUS', icon: CircleCheck, component: CiStatus },
   backups: { name: 'BACKUPS', icon: HardDriveDownload, component: BackupWidget },
   'metrics-cpu': { name: 'CPU', icon: Cpu, component: CpuWidget },
   'metrics-cores': { name: 'CORES', icon: Cpu, component: CoresWidget },
@@ -274,7 +282,7 @@ function migrateLegacyMetrics() {
 // Stale saved layouts (from an older defaultLayout revision) are discarded
 // so users get the fixed layout automatically, without having to know to
 // press "Reset".
-const LAYOUT_VERSION = 10;
+const LAYOUT_VERSION = 11;
 
 function invalidateStaleLayout() {
   try {
@@ -304,6 +312,19 @@ async function checkWidgetHealth(widgetId: string): Promise<WidgetHealth> {
           return { status: 'ready' };
         } catch {
           return { status: 'warning', message: 'Backend server not running' };
+        }
+
+      case 'ci-status':
+        try {
+          const res = await apiFetch('/api/ci/status', { signal: AbortSignal.timeout(35000) });
+          const body = await res.json();
+          if (!res.ok || body.error) throw new Error(body.error || 'CI API not available');
+          return { status: 'ready' };
+        } catch (err) {
+          return {
+            status: 'warning',
+            message: err instanceof Error ? err.message : 'CI API not available',
+          };
         }
 
       case 'kanban':

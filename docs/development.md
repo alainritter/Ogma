@@ -10,7 +10,7 @@ pnpm desktop    # Electron dev (spawns server + vite)
 pnpm desktop:prod  # vite build, then Electron loads backend-served bundle on :3010
 ```
 
-No test framework or CI is set up — `pnpm build` + `pnpm lint` are the verification gates.
+No test framework. CI (GitHub Actions) runs `pnpm lint`, `pnpm format:check` and `pnpm build`; the same commands are the local verification gates.
 
 ## Project Structure
 

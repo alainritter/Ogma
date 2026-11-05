@@ -194,3 +194,30 @@ export interface BackupOverview {
   scriptsDir: string;
   available: boolean;
 }
+
+export type CiState = 'success' | 'failure' | 'running' | 'cancelled';
+
+export interface CiWorkflow {
+  name: string;
+  state: CiState;
+  url: string;
+  createdAt: string;
+}
+
+export interface CiRepo {
+  /** owner/name */
+  repo: string;
+  branch: string;
+  isPrivate: boolean;
+  state: CiState;
+  workflows: CiWorkflow[];
+  /** Newest run of the worst workflow (or newest overall when green). */
+  url: string;
+}
+
+export interface CiStatusResponse {
+  repos: CiRepo[];
+  noCiCount: number;
+  fetchedAt: number;
+  error?: string;
+}
