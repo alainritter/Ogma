@@ -17,7 +17,7 @@
   "scripts": {
     "dev": "vite",
     "drift": "tsx scripts/drift.ts",
-    "dev:server": "tsx server/index.ts",
+    "dev:server": "tsx watch --clear-screen=false server/index.ts",
     "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:server\"",
     "desktop": "electron .",
     "desktop:prod": "vite build && NODE_ENV=production electron .",
