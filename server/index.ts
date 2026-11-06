@@ -31,6 +31,7 @@ import {
 } from './services/gitStatus.js';
 import { getCiStatus } from './services/githubCi.js';
 import { getDriftReport } from './services/drift.js';
+import { startPreviewProxy } from './services/previewProxy.js';
 import { suggestCommitMessage, OllamaUnavailableError } from './services/commitMessage.js';
 import { getDockerInfo } from './services/docker.js';
 import { isPrivateHost } from './services/netGuard.js';
@@ -77,6 +78,7 @@ function validateGitPath(userPath: string): string {
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3010', 10);
+const PREVIEW_PORT = parseInt(process.env.OGMA_PREVIEW_PORT || '3011', 10);
 // Bind to loopback by default. Set BIND_HOST=0.0.0.0 to expose on the LAN —
 // make sure you understand the consequences (no auth on any endpoint).
 const HOST = process.env.BIND_HOST || '127.0.0.1';
@@ -376,7 +378,9 @@ app.post('/api/kanban/tasks/:file/archive', generalLimiter, async (req, res) => 
 
 app.post('/api/kanban/tasks/:file/preview', generalLimiter, async (req, res) => {
   try {
-    res.json({ url: await startPreview(String(req.params.file)) });
+    const url = await startPreview(String(req.params.file));
+    const u = new URL(url);
+    res.json({ url, path: u.pathname + u.search + u.hash });
   } catch (error) {
     res.status(400).json({ error: error instanceof Error ? error.message : 'Preview failed' });
   }
@@ -914,6 +918,7 @@ server.listen(PORT, HOST, () => {
   console.log(`Weather: http://${HOST}:${PORT}/api/weather?location=Munich`);
   console.log(`Web Scraper: POST http://${HOST}:${PORT}/api/scrape`);
   console.log(`Health Check: http://${HOST}:${PORT}/health`);
+  startPreviewProxy(PREVIEW_PORT);
   if (HOST === '127.0.0.1' || HOST === '::1') {
     console.log(`\nListening on loopback only. Set BIND_HOST=0.0.0.0 to expose on LAN.\n`);
   } else {

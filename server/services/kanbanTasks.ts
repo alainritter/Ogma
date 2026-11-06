@@ -250,12 +250,25 @@ async function reachableUrl(url: string): Promise<string | null> {
   return null;
 }
 
+/** Last started loopback preview; served to remote clients by previewProxy.ts. */
+let previewTarget: URL | null = null;
+
+export function getPreviewTarget(): URL | null {
+  return previewTarget;
+}
+
+function rememberTarget(target: string): string {
+  const u = new URL(target);
+  if (['127.0.0.1', 'localhost', '[::1]'].includes(u.hostname)) previewTarget = u;
+  return target;
+}
+
 /** Start the preview server if needed (not stopped again), return the reachable URL. */
 export async function startPreview(file: string): Promise<string> {
   const task = await findTask(file);
   if (!task.preview) throw new Error('No preview set');
   let target = await reachableUrl(task.preview);
-  if (target) return target;
+  if (target) return rememberTarget(target);
   if (!task.previewCmd) throw new Error(`${task.preview} is not reachable`);
 
   const log = join(TASK_DIR, '..', `preview-${splitProjects(task.project)[0] || 'task'}.log`);
@@ -278,7 +291,7 @@ export async function startPreview(file: string): Promise<string> {
     await new Promise(r => setTimeout(r, 1000));
   }
   await out.close();
-  return target;
+  return rememberTarget(target);
 }
 
 /** A `working` session silent for longer than this is treated as stuck (long builds stay below it). */

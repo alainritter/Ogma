@@ -29,6 +29,8 @@ const COLUMNS: { status: KanbanStatus; label: string; color: string }[] = [
   { status: 'done', label: 'Erledigt', color: 'var(--sig-green)' },
 ];
 const POLL_MS = 3000;
+// Pforte port of the preview proxy (Ogma :3011), see Netzwerk/services.yaml.
+const PREVIEW_GATEWAY_PORT = 8451;
 // A working session that stopped reporting (crash, closed terminal) is no longer shown as live.
 const CATEGORY_COLORS = 10;
 const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
@@ -699,9 +701,20 @@ export function KanbanBoard() {
   };
 
   const openPreview = async (task: KanbanTask) => {
+    // Open synchronously: mobile browsers block window.open after an await.
+    const win = window.open('', '_blank');
     toast('Starte Vorschau …', 'info');
     const data = await post(task.file, 'preview');
-    if (data?.url) window.open(data.url, '_blank');
+    if (!data?.url) {
+      win?.close();
+      return;
+    }
+    const local = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
+    const target = local
+      ? data.url
+      : `https://${location.hostname}:${PREVIEW_GATEWAY_PORT}${data.path}`;
+    if (win) win.location.href = target;
+    else window.open(target, '_blank');
   };
 
   const projects = [...new Set(tasks.flatMap(t => splitProjects(t.project)))].sort();
