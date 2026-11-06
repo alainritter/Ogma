@@ -385,7 +385,7 @@ function ProjectEditor({
         </button>
       ))}
       <input
-        className="ds-input sm"
+        className="ds-input sm max-w-full"
         list="kanban-detail-projects"
         value={input}
         disabled={disabled}
@@ -658,9 +658,9 @@ export function KanbanBoard() {
 
   return (
     <div className="flex flex-col h-full gap-3 min-h-0">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <select
-          className="ds-select"
+          className="ds-select min-w-0 flex-1 @xl:flex-none"
           value={project}
           onChange={e => setProject(e.target.value)}
           aria-label="Projekt"
@@ -672,8 +672,14 @@ export function KanbanBoard() {
             </option>
           ))}
         </select>
-        <span className="text-xs text-text-muted">{visible.length} Aufgaben</span>
-        <div className="flex items-center gap-1 ml-2" role="group" aria-label="Spalten">
+        <span className="hidden @md:inline shrink-0 whitespace-nowrap text-xs text-text-muted">
+          {visible.length} Aufgaben
+        </span>
+        <div
+          className="flex flex-wrap items-center gap-1 order-last w-full @xl:order-none @xl:w-auto @xl:ml-2"
+          role="group"
+          aria-label="Spalten"
+        >
           {COLUMNS.map(col => {
             const shown = !hidden.includes(col.status);
             return (
