@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier; do not edit manually
-_commit: v1.1.0
+_commit: v1.1.1
 _src_path: /home/a/Dev/Kalliope
 has_architecture: true
 has_screenshot: true
@@ -8,5 +8,4 @@ license: mit
 project_name: Ogma
 screenshot_path: docs/screenshot.png
 status: active
-summary: 'Developer dashboard for my own workstation: system metrics, Git repos, Docker,
-    service status and a Kanban board for Claude Code tasks in one view.'
+summary: 'Developer dashboard for my own workstation: system metrics, Git repos, Docker, service status and a Kanban board for Claude Code tasks in one view.'
