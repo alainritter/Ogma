@@ -51,6 +51,7 @@ import {
   createTask,
   addAttachment,
   listActivity,
+  taskInsight,
   listProjects,
   startPreview,
 } from './services/kanbanTasks.js';
@@ -242,6 +243,20 @@ app.get('/api/kanban/activity', generalLimiter, async (_req, res) => {
   } catch (error) {
     console.error('Failed to list Kanban activity:', error);
     res.status(500).json({ error: 'Failed to list Kanban activity' });
+  }
+});
+
+app.get('/api/kanban/tasks/:number/insight', generalLimiter, async (req, res) => {
+  const number = String(req.params.number);
+  if (!/^\d{3}$/.test(number)) {
+    res.status(400).json({ error: 'Invalid task number' });
+    return;
+  }
+  try {
+    res.json(await taskInsight(number));
+  } catch (error) {
+    console.error('Failed to build Kanban insight:', error);
+    res.status(500).json({ error: 'Failed to build Kanban insight' });
   }
 });
 

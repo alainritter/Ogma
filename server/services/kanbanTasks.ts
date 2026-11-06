@@ -5,12 +5,26 @@ import { mkdir, readdir, readFile, rename, stat, writeFile, open } from 'fs/prom
 import { homedir } from 'os';
 import { basename, join } from 'path';
 import { splitProjects } from '../../shared/kanban.js';
-import type { KanbanActivity, KanbanStatus, KanbanTask } from '../../shared/types.js';
+import type {
+  KanbanActivity,
+  KanbanStatus,
+  KanbanTask,
+  KanbanTaskInsight,
+} from '../../shared/types.js';
+import {
+  buildInsight,
+  rememberSession,
+  runningAgents,
+  safeTranscript,
+  sessionModel,
+} from './kanbanInsight.js';
 
 // Task files: one Markdown file per task in TASK_DIR, frontmatter title/status/project/created.
 const TASK_DIR = process.env.KANBAN_DIR || join(homedir(), '.local/share/kanban/tasks');
 const ARCHIVE_DIR = join(TASK_DIR, 'archive');
 const ACTIVITY_DIR = join(TASK_DIR, '..', 'activity');
+// sessions/<NNN>.json: sessions that worked on a task, kept after the activity file is gone.
+const SESSIONS_DIR = join(TASK_DIR, '..', 'sessions');
 const ATTACHMENT_DIR = join(TASK_DIR, '..', 'attachments');
 const PROJECTS_DIR = join(homedir(), 'Dev');
 const STATUSES: readonly KanbanStatus[] = ['todo', 'doing', 'review', 'done'];
@@ -301,10 +315,38 @@ export async function listActivity(): Promise<KanbanActivity[]> {
         state = 'error';
         summary = `Keine Meldung seit ${Math.round(age / 60)} min`;
       }
-      result.push({ number, state, summary, age });
+      let model = '';
+      let agents: KanbanActivity['agents'] = [];
+      const transcript = safeTranscript(a.transcript);
+      if (transcript) {
+        try {
+          await rememberSession(
+            SESSIONS_DIR,
+            number,
+            String(a.session ?? name.slice(0, -5)),
+            transcript
+          );
+          model = await sessionModel(transcript);
+          agents = await runningAgents(transcript);
+        } catch {
+          // transcript unreadable: show the activity without model details
+        }
+      }
+      result.push({ number, state, summary, age, model, agents });
     } catch {
       // half-written or foreign file: skip
     }
   }
   return result;
+}
+
+/** Models, subagents and recent actions of all sessions recorded for a task. */
+export async function taskInsight(number: string): Promise<KanbanTaskInsight> {
+  let live: string[] = [];
+  try {
+    live = (await readdir(ACTIVITY_DIR)).filter(n => n.endsWith('.json')).map(n => n.slice(0, -5));
+  } catch {
+    // no activity dir yet
+  }
+  return buildInsight(SESSIONS_DIR, number, new Set(live));
 }

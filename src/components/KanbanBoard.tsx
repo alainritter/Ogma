@@ -10,7 +10,13 @@ import {
   Plus,
   X,
 } from 'lucide-react';
-import type { KanbanActivity, KanbanStatus, KanbanTask } from '../../shared/types';
+import type {
+  KanbanActivity,
+  KanbanAgent,
+  KanbanStatus,
+  KanbanTask,
+  KanbanTaskInsight,
+} from '../../shared/types';
 import { apiFetch } from '../lib/api';
 import { toast } from '../lib/toast';
 import { useSettingJSON } from '../lib/settings';
@@ -295,12 +301,160 @@ const ActivityDot = ({ activity }: { activity?: KanbanActivity }) => {
   );
 };
 
+// Model family → signal colour, so the same model reads the same everywhere on the board.
+const MODEL_FAMILIES = [
+  { key: 'opus', label: 'Opus', color: 'var(--sig-orange)' },
+  { key: 'sonnet', label: 'Sonnet', color: 'var(--sig-blue)' },
+  { key: 'haiku', label: 'Haiku', color: 'var(--sig-green)' },
+  { key: 'fable', label: 'Fable', color: 'var(--sig-yellow)' },
+];
+const modelFamily = (model: string) => {
+  const f = MODEL_FAMILIES.find(m => model.includes(m.key));
+  return { label: f?.label ?? model, color: f?.color ?? 'var(--sig-grey)' };
+};
+
+const ModelChip = ({ model }: { model: string }) => {
+  if (!model) return null;
+  const f = modelFamily(model);
+  return (
+    <span
+      className="ds-chip shrink-0"
+      title={model}
+      style={{ '--c': f.color } as React.CSSProperties}
+    >
+      {f.label}
+    </span>
+  );
+};
+
+const agentLine = (a: KanbanAgent) =>
+  `${a.type}${a.description ? ` – ${a.description}` : ''}${a.model ? ` (${a.model})` : ''}`;
+
 const LiveActivity = ({ activity }: { activity?: KanbanActivity }) => {
   if (!activity || activity.state === 'idle') return null;
+  const agents = activity.agents ?? [];
   return (
-    <span className={`flex items-center min-w-0 text-xs ${ACTIVITY_COLOR[activity.state]}`}>
+    <span className={`flex items-center gap-1 min-w-0 text-xs ${ACTIVITY_COLOR[activity.state]}`}>
       <span className="truncate">{activity.summary || ACTIVITY_LABEL[activity.state]}</span>
+      <ModelChip model={activity.model ?? ''} />
+      {agents.length > 0 && (
+        <span className="ds-chip shrink-0" title={agents.map(agentLine).join('\n')}>
+          +{agents.length} {agents.length === 1 ? 'Agent' : 'Agents'}
+        </span>
+      )}
     </span>
+  );
+};
+
+const fmtTokens = (n: number) =>
+  n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${Math.round(n / 1e3)} k` : String(n);
+const fmtTime = (ts: number) =>
+  new Date(ts * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+const fmtDay = (ts: number) =>
+  new Date(ts * 1000).toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+// Who worked on the task with which model: token share per model, subagents, recent actions.
+const TaskInsight = ({ number }: { number: string }) => {
+  const [insight, setInsight] = useState<KanbanTaskInsight | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (document.visibilityState !== 'visible') return;
+      try {
+        const res = await apiFetch(`/api/kanban/tasks/${number}/insight`);
+        if (res.ok && !cancelled) setInsight(await res.json());
+      } catch {
+        // the detail view works without insight
+      }
+    };
+    load();
+    const interval = setInterval(load, POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [number]);
+
+  if (!insight) return null;
+  if (!insight.sessions.length)
+    return <p className="text-xs text-text-muted">Noch keine Sessions erfasst</p>;
+  const totalOut = insight.models.reduce((n, m) => n + m.output, 0) || 1;
+  const first = insight.sessions[0].first;
+  const last = Math.max(...insight.sessions.map(s => s.last));
+  return (
+    <details className="text-xs" open>
+      <summary className="cursor-pointer text-text-dim">
+        Aktivität · {insight.sessions.length}{' '}
+        {insight.sessions.length === 1 ? 'Session' : 'Sessions'} · {fmtDay(first)} – {fmtDay(last)}
+        {insight.sessions.some(s => s.live) && ' · live'}
+      </summary>
+      <div className="flex flex-col gap-3 mt-2">
+        <ul className="flex flex-col gap-1">
+          {insight.models.map(m => (
+            <li key={m.model} className="flex items-center gap-2 min-w-0">
+              <span className="w-16 shrink-0">
+                <ModelChip model={m.model} />
+              </span>
+              <span
+                className="ds-progress flex-1 min-w-8"
+                title={`${Math.round((m.output / totalOut) * 100)} % der Output-Tokens`}
+                style={
+                  {
+                    '--v': m.output / totalOut,
+                    '--c': modelFamily(m.model).color,
+                  } as React.CSSProperties
+                }
+              >
+                <span />
+              </span>
+              <span className="shrink-0 text-text-muted tabular-nums">
+                {fmtTokens(m.output)} out
+                <span className="hidden @md:inline">
+                  {' '}
+                  · {fmtTokens(m.input + m.cacheRead)} in · {m.messages} Antw.
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+        {insight.agents.length > 0 && (
+          <ul className="flex flex-col gap-1">
+            {insight.agents.map((a, i) => (
+              <li key={i} className="flex items-center gap-2 min-w-0">
+                <ModelChip model={a.model} />
+                <span className="truncate text-text-dim" title={agentLine(a)}>
+                  {a.type}
+                  {a.description && ` – ${a.description}`}
+                </span>
+                <span className={`ml-auto shrink-0 ${a.running ? 'text-good' : 'text-text-muted'}`}>
+                  {a.running ? 'läuft' : 'fertig'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <ol className="flex flex-col gap-0.5 max-h-48 overflow-auto">
+          {[...insight.timeline].reverse().map((e, i) => (
+            <li key={i} className="flex items-center gap-2 min-w-0">
+              <span className="shrink-0 text-text-muted tabular-nums">{fmtTime(e.ts)}</span>
+              <span
+                className="shrink-0 w-2 h-2 rounded-full"
+                title={e.model}
+                style={{ background: modelFamily(e.model).color }}
+              />
+              <span className="shrink-0 text-text-dim">{e.actor}</span>
+              <span className="truncate">{e.label}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </details>
   );
 };
 
@@ -625,6 +779,7 @@ export function KanbanBoard() {
         </div>
         <LiveActivity activity={activity.find(a => a.number === detail.number)} />
         <PlanProgress body={detail.body} color={col.color} />
+        <TaskInsight number={detail.number} />
         {edit ? (
           <>
             <textarea

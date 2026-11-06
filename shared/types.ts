@@ -141,6 +141,41 @@ export interface KanbanActivity {
   summary: string;
   /** Seconds since the session last reported. */
   age: number;
+  /** Model of the main session's latest reply, short form (e.g. `opus-5-5`); empty if unknown. */
+  model: string;
+  /** Subagents of this session that are still running. */
+  agents: KanbanAgent[];
+}
+
+export interface KanbanAgent {
+  type: string;
+  description: string;
+  model: string;
+  running: boolean;
+}
+
+export interface KanbanTimelineEntry {
+  /** Unix seconds. */
+  ts: number;
+  /** `Haupt` for the main session, otherwise the subagent type. */
+  actor: string;
+  model: string;
+  label: string;
+}
+
+export interface KanbanModelUsage {
+  model: string;
+  input: number;
+  output: number;
+  cacheRead: number;
+  messages: number;
+}
+
+export interface KanbanTaskInsight {
+  sessions: { id: string; first: number; last: number; live: boolean }[];
+  models: KanbanModelUsage[];
+  agents: KanbanAgent[];
+  timeline: KanbanTimelineEntry[];
 }
 
 export interface KanbanTask {
