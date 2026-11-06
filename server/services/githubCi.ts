@@ -22,6 +22,7 @@ interface GhRun {
   conclusion: string;
   url: string;
   createdAt: string;
+  event: string;
 }
 
 async function gh<T>(args: string[]): Promise<T> {
@@ -60,12 +61,13 @@ async function repoCi(repo: GhRepo): Promise<CiRepo | null> {
     '--limit',
     '20',
     '--json',
-    'workflowName,status,conclusion,url,createdAt',
+    'workflowName,status,conclusion,url,createdAt,event',
   ]);
   // Runs come newest first; the first run per workflow is its current state.
+  // `dynamic` runs are GitHub-managed jobs (Dependabot updates), not the repo's CI.
   const latest = new Map<string, CiWorkflow>();
   for (const run of runs) {
-    if (latest.has(run.workflowName)) continue;
+    if (run.event === 'dynamic' || latest.has(run.workflowName)) continue;
     latest.set(run.workflowName, {
       name: run.workflowName,
       state: toState(run),
