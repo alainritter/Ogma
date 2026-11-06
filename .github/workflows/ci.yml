@@ -21,7 +21,7 @@ jobs:
           repository: alainritter/Harmonia
           ssh-key: ${{ secrets.HARMONIA_DEPLOY_KEY }}
           path: Harmonia
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           package_json_file: Ogma/package.json
       - uses: actions/setup-node@v5
