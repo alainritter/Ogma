@@ -350,13 +350,24 @@ const fmtTokens = (n: number) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${Math.round(n / 1e3)} k` : String(n);
 const fmtTime = (ts: number) =>
   new Date(ts * 1000).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-const fmtDay = (ts: number) =>
-  new Date(ts * 1000).toLocaleString('de-DE', {
-    day: '2-digit',
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+// Time only for today, otherwise with date.
+const fmtWhen = (ts: number) =>
+  new Date(ts * 1000).toDateString() === new Date().toDateString()
+    ? fmtTime(ts)
+    : new Date(ts * 1000).toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+const ModelDot = ({ model }: { model: string }) => (
+  <span
+    className="shrink-0 w-2 h-2 rounded-full"
+    title={model}
+    style={{ background: modelFamily(model).color }}
+  />
+);
 
 // Who worked on the task with which model: token share per model, subagents, recent actions.
 const TaskInsight = ({ number }: { number: string }) => {
@@ -382,79 +393,96 @@ const TaskInsight = ({ number }: { number: string }) => {
   }, [number]);
 
   if (!insight) return null;
-  if (!insight.sessions.length)
-    return <p className="text-xs text-text-muted">Noch keine Sessions erfasst</p>;
+  const live = insight.sessions.some(s => s.live);
   const totalOut = insight.models.reduce((n, m) => n + m.output, 0) || 1;
-  const first = insight.sessions[0].first;
-  const last = Math.max(...insight.sessions.map(s => s.last));
   return (
-    <details className="text-xs" open>
-      <summary className="cursor-pointer text-text-dim">
-        Aktivität · {insight.sessions.length}{' '}
-        {insight.sessions.length === 1 ? 'Session' : 'Sessions'} · {fmtDay(first)} – {fmtDay(last)}
-        {insight.sessions.some(s => s.live) && ' · live'}
-      </summary>
-      <div className="flex flex-col gap-3 mt-2">
-        <ul className="flex flex-col gap-1">
-          {insight.models.map(m => (
-            <li key={m.model} className="flex items-center gap-2 min-w-0">
-              <span className="w-16 shrink-0">
-                <ModelChip model={m.model} />
-              </span>
-              <span
-                className="ds-progress flex-1 min-w-8"
-                title={`${Math.round((m.output / totalOut) * 100)} % der Output-Tokens`}
-                style={
-                  {
-                    '--v': m.output / totalOut,
-                    '--c': modelFamily(m.model).color,
-                  } as React.CSSProperties
-                }
-              >
-                <span />
-              </span>
-              <span className="shrink-0 text-text-muted tabular-nums">
-                {fmtTokens(m.output)} out
-                <span className="hidden @md:inline">
-                  {' '}
-                  · {fmtTokens(m.input + m.cacheRead)} in · {m.messages} Antw.
-                </span>
-              </span>
-            </li>
-          ))}
-        </ul>
-        {insight.agents.length > 0 && (
-          <ul className="flex flex-col gap-1">
-            {insight.agents.map((a, i) => (
-              <li key={i} className="flex items-center gap-2 min-w-0">
-                <ModelChip model={a.model} />
-                <span className="truncate text-text-dim" title={agentLine(a)}>
-                  {a.type}
-                  {a.description && ` – ${a.description}`}
-                </span>
-                <span className={`ml-auto shrink-0 ${a.running ? 'text-good' : 'text-text-muted'}`}>
-                  {a.running ? 'läuft' : 'fertig'}
-                </span>
-              </li>
-            ))}
-          </ul>
+    <section className="flex flex-col gap-3 p-3 text-xs bg-elevated border border-line rounded-lg">
+      <header className="flex items-center gap-2 min-w-0">
+        <span className="font-medium text-text">Aktivität</span>
+        {live && (
+          <span className="flex items-center gap-1 text-good">
+            <span className="w-2 h-2 rounded-full bg-current" />
+            live
+          </span>
         )}
-        <ol className="flex flex-col gap-0.5 max-h-48 overflow-auto">
-          {[...insight.timeline].reverse().map((e, i) => (
-            <li key={i} className="flex items-center gap-2 min-w-0">
-              <span className="shrink-0 text-text-muted tabular-nums">{fmtTime(e.ts)}</span>
-              <span
-                className="shrink-0 w-2 h-2 rounded-full"
-                title={e.model}
-                style={{ background: modelFamily(e.model).color }}
-              />
-              <span className="shrink-0 text-text-dim">{e.actor}</span>
-              <span className="truncate">{e.label}</span>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </details>
+        {insight.sessions.length > 0 && (
+          <span className="ml-auto truncate text-text-muted">
+            {insight.sessions.length} {insight.sessions.length === 1 ? 'Session' : 'Sessions'} ·
+            seit {fmtWhen(insight.sessions[0].first)}
+          </span>
+        )}
+      </header>
+      {!insight.sessions.length ? (
+        <p className="text-text-muted">Noch keine Sessions erfasst</p>
+      ) : (
+        <>
+          <div className="flex flex-col gap-2">
+            <div className="flex h-2 overflow-hidden rounded-full bg-active">
+              {insight.models.map(m => (
+                <span
+                  key={m.model}
+                  style={{
+                    width: `${(m.output / totalOut) * 100}%`,
+                    background: modelFamily(m.model).color,
+                  }}
+                />
+              ))}
+            </div>
+            <ul className="flex flex-wrap gap-x-4 gap-y-1">
+              {insight.models.map(m => (
+                <li
+                  key={m.model}
+                  className="flex items-center gap-1"
+                  title={`${m.model}: ${fmtTokens(m.output)} Output, ${fmtTokens(m.input + m.cacheRead)} Input, ${m.messages} Antworten`}
+                >
+                  <ModelDot model={m.model} />
+                  <span className="text-text">{modelFamily(m.model).label}</span>
+                  <span className="text-text-muted tabular-nums">
+                    {Math.round((m.output / totalOut) * 100)} % · {fmtTokens(m.output)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {insight.agents.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <span className="text-text-muted">Agents</span>
+              <ul className="flex flex-col gap-1">
+                {insight.agents.map((a, i) => (
+                  <li key={i} className="flex items-center gap-2 min-w-0" title={agentLine(a)}>
+                    <ModelDot model={a.model} />
+                    <span className="shrink-0 text-text">{a.type}</span>
+                    <span className="truncate text-text-muted">{a.description}</span>
+                    <span
+                      className={`ml-auto shrink-0 ${a.running ? 'text-good' : 'text-text-muted'}`}
+                    >
+                      {a.running ? 'läuft' : 'fertig'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {insight.timeline.length > 0 && (
+            <div className="flex flex-col gap-1 min-h-0">
+              <span className="text-text-muted">Verlauf</span>
+              <ol className="flex flex-col gap-1 max-h-48 overflow-auto">
+                {[...insight.timeline].reverse().map((e, i) => (
+                  <li key={i} className="flex items-center gap-2 min-w-0">
+                    <span className="shrink-0 text-text-muted tabular-nums">{fmtTime(e.ts)}</span>
+                    <ModelDot model={e.model} />
+                    <span className="truncate text-text-dim">
+                      {e.actor !== 'Haupt' && <span className="text-text-muted">{e.actor} · </span>}
+                      {e.label}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 };
 
