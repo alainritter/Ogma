@@ -12,11 +12,11 @@ jobs:
       run:
         working-directory: Ogma
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           path: Ogma
       # Ogma imports the private sibling repo Harmonia (../Harmonia); read-only deploy key.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           repository: alainritter/Harmonia
           ssh-key: ${{ secrets.HARMONIA_DEPLOY_KEY }}
