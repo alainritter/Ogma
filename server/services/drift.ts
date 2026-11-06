@@ -19,10 +19,17 @@ const execFileAsync = promisify(execFile);
 const DEV_ROOT = process.env.DRIFT_ROOT || join(homedir(), 'Dev');
 const CACHE_MS = 10 * 60_000;
 const CONCURRENCY = 4;
-/** Abandoned (Geisterhand) or client project (Wohlfuehlgesundheit): not part of the house standards. */
-const EXCLUDED_REPOS = ['Geisterhand', 'Wohlfuehlgesundheit'];
+/** Abandoned (see ~/Dev/CLAUDE.md), not worth measuring. */
+const EXCLUDED_REPOS = ['Geisterhand'];
 /** Own design (see ~/Dev/CLAUDE.md "Design-Regel"): Harmonia is not required there. */
-const HARMONIA_EXEMPT = ['PXLNGN.NET', 'Ahnentafel', 'Echo', 'Zeitgeber', 'Harmonia'];
+const HARMONIA_EXEMPT = [
+  'PXLNGN.NET',
+  'Wohlfuehlgesundheit',
+  'Ahnentafel',
+  'Echo',
+  'Zeitgeber',
+  'Harmonia',
+];
 const TEMPLATE_VERSION_WARN_MAX = 5;
 const TOKEN_WARN_MAX = 10;
 const WALK_MAX_DEPTH = 6;
