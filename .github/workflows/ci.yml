@@ -8,13 +8,25 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Ogma
     steps:
       - uses: actions/checkout@v5
+        with:
+          path: Ogma
+      # Ogma imports the private sibling repo Harmonia (../Harmonia); read-only deploy key.
+      - uses: actions/checkout@v5
+        with:
+          repository: alainritter/Harmonia
+          ssh-key: ${{ secrets.HARMONIA_DEPLOY_KEY }}
+          path: Harmonia
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: pnpm
+          cache-dependency-path: Ogma/pnpm-lock.yaml
       # Electron/Playwright browser binaries aren't needed to typecheck or lint.
       - run: pnpm install --frozen-lockfile --ignore-scripts
       - run: pnpm lint
