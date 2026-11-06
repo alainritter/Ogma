@@ -51,6 +51,11 @@ function toState(run: GhRun): CiState {
 async function repoCi(repo: GhRepo): Promise<CiRepo | null> {
   const branch = repo.defaultBranchRef?.name;
   if (!branch) return null;
+  const perms = await gh<{ enabled: boolean }>([
+    'api',
+    `repos/${repo.nameWithOwner}/actions/permissions`,
+  ]);
+  if (!perms.enabled) return null;
   const runs = await gh<GhRun[]>([
     'run',
     'list',
