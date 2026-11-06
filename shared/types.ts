@@ -221,3 +221,31 @@ export interface CiStatusResponse {
   fetchedAt: number;
   error?: string;
 }
+
+export type DriftStatus = 'ok' | 'warn' | 'fail' | 'na';
+export type DriftCategory = 'Vorlage' | 'Design' | 'Infrastruktur' | 'Struktur' | 'Toolchain';
+
+export interface DriftCheck {
+  id: string;
+  category: DriftCategory;
+  label: string;
+  status: DriftStatus;
+  detail?: string;
+  /** Copyable command or hint text. */
+  fix?: string;
+}
+
+export interface DriftRepo {
+  name: string;
+  path: string;
+  score: number;
+  checks: DriftCheck[];
+}
+
+export interface DriftReport {
+  score: number;
+  categories: { category: DriftCategory; score: number }[];
+  repos: DriftRepo[];
+  fetchedAt: number;
+  error?: string;
+}

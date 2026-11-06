@@ -16,6 +16,7 @@
   },
   "scripts": {
     "dev": "vite",
+    "drift": "tsx scripts/drift.ts",
     "dev:server": "tsx server/index.ts",
     "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:server\"",
     "desktop": "electron .",
@@ -46,6 +47,7 @@
     "turndown": "^7.2.4",
     "validator": "^13.15.35",
     "ws": "^8.22.0",
+    "yaml": "^2.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {

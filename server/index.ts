@@ -30,6 +30,7 @@ import {
   bulkFetch,
 } from './services/gitStatus.js';
 import { getCiStatus } from './services/githubCi.js';
+import { getDriftReport } from './services/drift.js';
 import { suggestCommitMessage, OllamaUnavailableError } from './services/commitMessage.js';
 import { getDockerInfo } from './services/docker.js';
 import { isPrivateHost } from './services/netGuard.js';
@@ -620,6 +621,10 @@ app.get('/api/connectivity', generalLimiter, async (_req, res) => {
 
 app.get('/api/ci/status', generalLimiter, async (req, res) => {
   res.json(await getCiStatus(req.query.refresh === '1'));
+});
+
+app.get('/api/drift', generalLimiter, async (req, res) => {
+  res.json(await getDriftReport(req.query.refresh === '1'));
 });
 
 app.get('/api/git/status', generalLimiter, async (req, res) => {

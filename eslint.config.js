@@ -33,7 +33,7 @@ export default defineConfig([
   },
   // Backend + tooling: Node environment, no React rules
   {
-    files: ['server/**/*.ts', 'vite.config.ts'],
+    files: ['server/**/*.ts', 'scripts/**/*.ts', 'vite.config.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommended, eslintConfigPrettier],
     languageOptions: {
       ecmaVersion: 2023,

@@ -12,6 +12,7 @@
 | `POST /api/backups/:id/stop`    | Stop a running backup (SIGTERM to the process group)                         |
 | `PUT /api/backups/:id/schedule` | Body `{preset: off\|daily\|weekly\|monthly}`, writes a systemd timer drop-in |
 | `GET /api/backups/logs/:file`   | Tail of a backup log (strict file-name whitelist)                            |
+| `GET /api/drift[?refresh=1]`    | Drift score of own repos against house standards — cached 10 min             |
 | `GET /api/service-status`       | Aggregated Statuspage.io data                                                |
 | `GET /api/connectivity`         | HTTP latency probes                                                          |
 | `GET/POST /api/git/*`           | status, pull, push, fetch, commit, commit-message (Ollama), bulk             |
